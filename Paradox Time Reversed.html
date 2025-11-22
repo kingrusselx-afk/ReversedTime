@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Paradox Interface</title>
+    <style>
+        :root {
+            --bg: #080808;
+            --text: #dcdcdc;
+            --accent: #c5a059; /* Emas Pudar */
+            --danger: #8b0000;
+            --font-main: 'Times New Roman', Times, serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            text-align: center;
+            user-select: none;
+        }
+
+        /* Container Utama */
+        .chronos-container {
+            position: relative;
+            z-index: 10;
+            border-top: 1px solid rgba(197, 160, 89, 0.3);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+            padding: 60px 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        /* Label Kecil */
+        .label {
+            font-size: 0.75rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* Jam Utama (Paradox) */
+        .time-display {
+            font-size: 4.5rem;
+            font-weight: normal;
+            margin: 10px 0;
+            letter-spacing: -2px;
+            color: var(--text);
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-display {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+        }
+
+        /* Status Sinkronisasi */
+        .status {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            color: #444;
+        }
+
+        .status span { color: var(--danger); }
+
+        /* Tombol Start Over / Sync */
+        .sync-btn {
+            background: transparent;
+            border: 1px solid #333;
+            color: #666;
+            font-family: var(--font-main);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 15px 30px;
+            margin-top: 50px;
+            cursor: pointer;
+            transition: all 0.6s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sync-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(197, 160, 89, 0.1);
+        }
+
+        .sync-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Data Real Time (Kecil di bawah) */
+        .footer-info {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.7rem;
+            color: #333;
+            font-family: sans-serif; /* Pembeda font agar jelas ini UI sistem */
+            letter-spacing: 0.1em;
+        }
+
+        @media (max-width: 600px) {
+            .time-display { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chronos-container">
+        <div class="label">Temporal Displacement</div>
+        
+        <div class="time-display" id="paradoxTime">00:00:00</div>
+        <div class="date-display" id="paradoxDate">Initializing...</div>
+
+        <div class="status">
+            SEQUENCE STATUS: <span id="statusText">DIVERGING</span>
+        </div>
+
+        <button class="sync-btn" onclick="resetTimeline()">Initiate Sequence</button>
+    </div>
+
+    <div class="footer-info">
+        REALITY: <span id="realTime"></span>
+    </div>
+
+    <script>
+        // KUNCI UTAMA:
+        // Kita menyimpan 'Waktu Start' (Pivot) di memori browser.
+        // Jika belum ada, kita set ke sekarang.
+        
+        function getPivotTime() {
+            const stored = localStorage.getItem('paradox_pivot_v1');
+            if (stored) {
+                return parseInt(stored);
+            } else {
+                // Jika pertama kali dibuka, set Pivot ke Waktu Sekarang
+                const now = Date.now();
+                localStorage.setItem('paradox_pivot_v1', now);
+                return now;
+            }
+        }
+
+        // Fungsi Reset (Tombol Start Over)
+        function resetTimeline() {
+            const now = Date.now();
+            localStorage.setItem('paradox_pivot_v1', now);
+            
+            // Efek visual kecil saat reset
+            const display = document.getElementById('paradoxTime');
+            display.style.opacity = 0;
+            setTimeout(() => display.style.opacity = 1, 300);
+        }
+
+        function updateClock() {
+            const now = Date.now();
+            const pivot = getPivotTime();
+
+            // RUMUS WAKTU TERBALIK:
+            // Selisih = Waktu Asli - Waktu Pivot (Seberapa lama kita sudah berjalan sejak tombol ditekan)
+            // Waktu Website = Waktu Pivot - Selisih
+            // (Jadi kita mundur ke belakang sejauh kita maju ke depan)
+            
+            const gap = now - pivot;
+            const reverseTimeValue = pivot - gap;
+            const reverseDate = new Date(reverseTimeValue);
+
+            // Format Tampilan (Jam:Menit:Detik)
+            const h = String(reverseDate.getHours()).padStart(2, '0');
+            const m = String(reverseDate.getMinutes()).padStart(2, '0');
+            const s = String(reverseDate.getSeconds()).padStart(2, '0');
+            
+            // Milidetik (2 digit)
+            const ms = String(Math.floor(reverseDate.getMilliseconds() / 10)).padStart(2, '0');
+
+            // Tanggal
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = reverseDate.toLocaleDateString('id-ID', options);
+
+            // Render
+            document.getElementById('paradoxTime').innerText = `${h}:${m}:${s}:${ms}`;
+            document.getElementById('paradoxDate').innerText = dateStr;
+
+            // Render Waktu Asli (Footer)
+            const realDate = new Date(now);
+            document.getElementById('realTime').innerText = realDate.toLocaleString('id-ID');
+
+            // Update Status Teks
+            const statusEl = document.getElementById('statusText');
+            if (gap < 1000) {
+                statusEl.innerText = "SYNCHRONIZED";
+                statusEl.style.color = "#c5a059"; // Gold
+            } else {
+                statusEl.innerText = "DIVERGING (-" + Math.floor(gap/1000) + "s)";
+                statusEl.style.color = "#8b0000"; // Red
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        // Jalankan
+        updateClock();
+    </script>
+</body>
+</html>
